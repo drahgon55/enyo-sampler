@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enyo 2.7 Sampler</title>
+
+<style>
+ :root {
+   --bg: #fff; --fg: #1a1a1a; --muted: #5f6368; --line: #e0e0e0;
+   --accent: #F49200; --link: #1879CD; --card: #fafafa;
+ }
+ @media (prefers-color-scheme: dark) {
+   :root:not([data-theme="light"]) {
+     --bg: #17181a; --fg: #e8eaed; --muted: #9aa0a6; --line: #303134;
+     --accent: #F49200; --link: #6cb6f5; --card: #202124;
+   }
+ }
+ * { box-sizing: border-box; }
+ body {
+   margin: 0; padding: 2.5rem 1rem 4rem;
+   background: var(--bg); color: var(--fg);
+   font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+ }
+ .wrap { max-width: 52rem; margin: 0 auto; }
+ h1 { font-size: 1.7rem; margin: 0 0 .3rem; }
+ .sub { color: var(--muted); margin: 0 0 2.25rem; font-size: .95rem; }
+ code { font-size: .85em; background: var(--card); padding: .1em .35em; border-radius: 3px; }
+
+ .libs { display: grid; gap: .9rem; }
+ a.lib {
+   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .6rem 1rem;
+   padding: 1.1rem 1.25rem; text-decoration: none; color: inherit;
+   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+ }
+ a.lib:hover { border-color: var(--accent); }
+ a.lib .name {
+   font-weight: 650; color: var(--link); font-size: 1.05rem;
+   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+ }
+ a.lib .count {
+   grid-row: 1; grid-column: 2; color: var(--muted); font-size: .8rem;
+   white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
+ }
+ a.lib .blurb { grid-column: 1 / -1; color: var(--muted); font-size: .9rem; margin-top: -.25rem; }
+
+ .note {
+   margin-top: 2.5rem; padding: 1rem 1.15rem; border-left: 3px solid var(--accent);
+   background: var(--card); border-radius: 0 8px 8px 0; font-size: .9rem; color: var(--muted);
+ }
+ .note strong { color: var(--fg); }
+ .note p { margin: 0 0 .7rem; }
+ .note p:last-child { margin-bottom: 0; }
+ pre {
+   margin: .5rem 0 0; padding: .7rem .85rem; overflow-x: auto;
+   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+   font: .82rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg);
+ }
+ #missing:empty { display: none; }
+ #missing {
+   margin-top: 1.25rem; padding: 1rem 1.15rem; border-left: 3px solid #c5221f;
+   background: var(--card); border-radius: 0 8px 8px 0; font-size: .9rem;
+ }
+ #missing strong { color: #c5221f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Enyo 2.7 sampler</h1>
+<p class="sub">
+  Every sample the three libraries used to ship, ported to native ES modules.
+  No bundler, no build step.
+</p>
+
+<div class="libs">
+  <a class="lib" href="../enyo/samples/index.html" data-lib="enyo">
+    <span class="name">enyo</span>
+    <span class="count">33 samples</span>
+    <span class="blurb">
+      The framework itself: controls and inputs, repeaters and data lists,
+      scrollers, popups, drag and gesture, audio and video, animation, Ajax
+      and web services.
+    </span>
+  </a>
+  <a class="lib" href="../layout/samples/index.html" data-lib="layout">
+    <span class="name">layout</span>
+    <span class="count">23 samples</span>
+    <span class="blurb">
+      Arranging things: Panels and the seven arrangers, Fittables, the List
+      family, Slideable, ImageView and PanZoomView.
+    </span>
+  </a>
+  <a class="lib" href="../onyx/samples/index.html" data-lib="onyx">
+    <span class="name">onyx</span>
+    <span class="count">22 samples</span>
+    <span class="blurb">
+      The widget set: buttons, checkboxes and toggles, inputs, menus and
+      submenus, pickers, popups, toolbars, sliders, tooltips.
+    </span>
+  </a>
+</div>
+
+<div id="missing"></div>
+
+<div class="note">
+  <p>
+    <strong>These are ports, not the originals.</strong> They come from the
+    <code>2.5.1-release</code> tag of <code>enyojs/enyo</code>,
+    <code>enyojs/layout</code> and <code>enyojs/onyx</code> — the last tag that
+    still had them, before 2.6 deleted every <code>samples/</code> folder. Each
+    library's own <code>samples/README.md</code> records what its port changed
+    and what it found broken along the way.
+  </p>
+  <p>
+    <strong>Serve the directory that holds the checkouts</strong>, not any one
+    of them. The pages resolve bare specifiers through an import map, so
+    <code>enyo</code>, <code>layout</code>, <code>onyx</code>,
+    <code>enyo-ilib</code> and this repo all have to sit side by side under the
+    served root:
+  </p>
+  <pre>python3 layout/test-layout/serve.py 8000 /path/that/holds/the/checkouts</pre>
+  <p>
+    Use that rather than <code>python3 -m http.server</code>: the latter lets
+    the browser cache ES modules, so a reload can silently re-run stale code.
+  </p>
+</div>
+
+</div>
+
+<script>
+// The three links point outside this repo, at sibling checkouts. If one is not
+// there — not cloned, or the server was pointed at the wrong root — say so
+// here rather than letting the click land on a 404.
+(async function () {
+	const links = Array.from(document.querySelectorAll('a.lib'));
+	const results = await Promise.all(links.map(async a => {
+		try {
+			const r = await fetch(a.getAttribute('href'), {method: 'HEAD'});
+			return r.ok ? null : a.dataset.lib;
+		} catch (e) {
+			return a.dataset.lib;
+		}
+	}));
+	const missing = results.filter(Boolean);
+	if (!missing.length) return;
+	missing.forEach(lib => {
+		const a = links.find(x => x.dataset.lib === lib);
+		a.style.opacity = '.55';
+		a.querySelector('.count').textContent = 'not found';
+	});
+	document.getElementById('missing').innerHTML =
+		'<strong>' + missing.join(' and ') + ' did not answer.</strong> ' +
+		'Either the checkout is missing from the served root, or the server is ' +
+		'rooted inside one repository instead of the directory that holds them all.';
+})();
+</script>
+</body>
+</html>
