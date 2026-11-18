@@ -3,158 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
 <title>Enyo 2.7 Sampler</title>
 
+<!-- There is no loader, so the sheets this page uses are listed by hand:
+     enyo's base plus the three enyo modules the shell reaches for, then
+     layout's and onyx's complete compiled sheets. The samples themselves run
+     in frames and bring their own. -->
+<link rel="stylesheet" href="/enyo/css/enyo.css">
+<link rel="stylesheet" href="/enyo/src/Scroller/Scroller.css">
+<link rel="stylesheet" href="/enyo/src/ScrollThumb/ScrollThumb.css">
+<link rel="stylesheet" href="/enyo/src/ToolDecorator/ToolDecorator.css">
+<link rel="stylesheet" href="/layout/css/layout.css">
+<link rel="stylesheet" href="/onyx/css/onyx.css">
+<link rel="stylesheet" href="Sampler.css">
+
+<!--
+	No bundler and no build step: the browser resolves the bare specifiers
+	through the map below. Like every page in these forks it wants the `enyo`,
+	`layout` and `onyx` checkouts side by side under the served root, so serve
+	their common parent -- the directory that HOLDS them, not one of them:
+
+		python3 layout/test-layout/serve.py 8000 /path/that/holds/them
+
+	then open http://localhost:8000/enyo-sampler/index.html
+
+	Use serve.py rather than `python3 -m http.server`: the latter lets the
+	browser cache ES modules, so a reload can re-run stale code.
+-->
+<script type="importmap">
+{ "imports": {
+  "enyo":    "/enyo/index.js",
+  "enyo/":   "/enyo/",
+  "layout":  "/layout/index.js",
+  "layout/": "/layout/",
+  "onyx":    "/onyx/index.js",
+  "onyx/":   "/onyx/"
+} }
+</script>
+
 <style>
- :root {
-   --bg: #fff; --fg: #1a1a1a; --muted: #5f6368; --line: #e0e0e0;
-   --accent: #F49200; --link: #1879CD; --card: #fafafa;
+ /* For the failure notice below, and for the moment before the shell paints. */
+ .boot {
+   font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+   color: #9AA0A6; margin: 0; padding: 24px; white-space: pre-wrap;
  }
- @media (prefers-color-scheme: dark) {
-   :root:not([data-theme="light"]) {
-     --bg: #17181a; --fg: #e8eaed; --muted: #9aa0a6; --line: #303134;
-     --accent: #F49200; --link: #6cb6f5; --card: #202124;
-   }
- }
- * { box-sizing: border-box; }
- body {
-   margin: 0; padding: 2.5rem 1rem 4rem;
-   background: var(--bg); color: var(--fg);
-   font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
- }
- .wrap { max-width: 52rem; margin: 0 auto; }
- h1 { font-size: 1.7rem; margin: 0 0 .3rem; }
- .sub { color: var(--muted); margin: 0 0 2.25rem; font-size: .95rem; }
- code { font-size: .85em; background: var(--card); padding: .1em .35em; border-radius: 3px; }
-
- .libs { display: grid; gap: .9rem; }
- a.lib {
-   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .6rem 1rem;
-   padding: 1.1rem 1.25rem; text-decoration: none; color: inherit;
-   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
- }
- a.lib:hover { border-color: var(--accent); }
- a.lib .name {
-   font-weight: 650; color: var(--link); font-size: 1.05rem;
-   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
- }
- a.lib .count {
-   grid-row: 1; grid-column: 2; color: var(--muted); font-size: .8rem;
-   white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
- }
- a.lib .blurb { grid-column: 1 / -1; color: var(--muted); font-size: .9rem; margin-top: -.25rem; }
-
- .note {
-   margin-top: 2.5rem; padding: 1rem 1.15rem; border-left: 3px solid var(--accent);
-   background: var(--card); border-radius: 0 8px 8px 0; font-size: .9rem; color: var(--muted);
- }
- .note strong { color: var(--fg); }
- .note p { margin: 0 0 .7rem; }
- .note p:last-child { margin-bottom: 0; }
- pre {
-   margin: .5rem 0 0; padding: .7rem .85rem; overflow-x: auto;
-   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
-   font: .82rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg);
- }
- #missing:empty { display: none; }
- #missing {
-   margin-top: 1.25rem; padding: 1rem 1.15rem; border-left: 3px solid #c5221f;
-   background: var(--card); border-radius: 0 8px 8px 0; font-size: .9rem;
- }
- #missing strong { color: #c5221f; }
+ .boot-fail { color: #C5221F; }
 </style>
 </head>
-<body>
-<div class="wrap">
+<!-- `onyx` scopes onyx's own typography rules, the same way its sample pages
+     get them. -->
+<body class="onyx enyo-unselectable">
 
-<h1>Enyo 2.7 sampler</h1>
-<p class="sub">
-  Every sample the three libraries used to ship, ported to native ES modules.
-  No bundler, no build step.
-</p>
+<pre id="boot" class="boot">loading the sampler…</pre>
 
-<div class="libs">
-  <a class="lib" href="../enyo/samples/index.html" data-lib="enyo">
-    <span class="name">enyo</span>
-    <span class="count">33 samples</span>
-    <span class="blurb">
-      The framework itself: controls and inputs, repeaters and data lists,
-      scrollers, popups, drag and gesture, audio and video, animation, Ajax
-      and web services.
-    </span>
-  </a>
-  <a class="lib" href="../layout/samples/index.html" data-lib="layout">
-    <span class="name">layout</span>
-    <span class="count">23 samples</span>
-    <span class="blurb">
-      Arranging things: Panels and the seven arrangers, Fittables, the List
-      family, Slideable, ImageView and PanZoomView.
-    </span>
-  </a>
-  <a class="lib" href="../onyx/samples/index.html" data-lib="onyx">
-    <span class="name">onyx</span>
-    <span class="count">22 samples</span>
-    <span class="blurb">
-      The widget set: buttons, checkboxes and toggles, inputs, menus and
-      submenus, pickers, popups, toolbars, sliders, tooltips.
-    </span>
-  </a>
-</div>
-
-<div id="missing"></div>
-
-<div class="note">
-  <p>
-    <strong>These are ports, not the originals.</strong> They come from the
-    <code>2.5.1-release</code> tag of <code>enyojs/enyo</code>,
-    <code>enyojs/layout</code> and <code>enyojs/onyx</code> — the last tag that
-    still had them, before 2.6 deleted every <code>samples/</code> folder. Each
-    library's own <code>samples/README.md</code> records what its port changed
-    and what it found broken along the way.
-  </p>
-  <p>
-    <strong>Serve the directory that holds the checkouts</strong>, not any one
-    of them. The pages resolve bare specifiers through an import map, so
-    <code>enyo</code>, <code>layout</code>, <code>onyx</code>,
-    <code>enyo-ilib</code> and this repo all have to sit side by side under the
-    served root:
-  </p>
-  <pre>python3 layout/test-layout/serve.py 8000 /path/that/holds/the/checkouts</pre>
-  <p>
-    Use that rather than <code>python3 -m http.server</code>: the latter lets
-    the browser cache ES modules, so a reload can silently re-run stale code.
-  </p>
-</div>
-
-</div>
-
+<!-- A module that fails to LINK never runs, so the module script below could
+     not report its own failure and the page would sit there blank. This
+     classic script turns that silence into something readable -- and the most
+     likely cause by far is a server rooted in the wrong place, so it says so.
+     -->
 <script>
-// The three links point outside this repo, at sibling checkouts. If one is not
-// there — not cloned, or the server was pointed at the wrong root — say so
-// here rather than letting the click land on a 404.
-(async function () {
-	const links = Array.from(document.querySelectorAll('a.lib'));
-	const results = await Promise.all(links.map(async a => {
-		try {
-			const r = await fetch(a.getAttribute('href'), {method: 'HEAD'});
-			return r.ok ? null : a.dataset.lib;
-		} catch (e) {
-			return a.dataset.lib;
-		}
-	}));
-	const missing = results.filter(Boolean);
-	if (!missing.length) return;
-	missing.forEach(lib => {
-		const a = links.find(x => x.dataset.lib === lib);
-		a.style.opacity = '.55';
-		a.querySelector('.count').textContent = 'not found';
-	});
-	document.getElementById('missing').innerHTML =
-		'<strong>' + missing.join(' and ') + ' did not answer.</strong> ' +
-		'Either the checkout is missing from the served root, or the server is ' +
-		'rooted inside one repository instead of the directory that holds them all.';
-})();
+window.addEventListener('error', function (e) {
+	document.title = 'FAIL (load)';
+	var boot = document.getElementById('boot');
+	if (!boot) { return; }
+	boot.className = 'boot boot-fail';
+	boot.textContent = 'The sampler did not load: ' + e.message +
+		'\n\nThe usual cause is the server being rooted inside one repository ' +
+		'instead of the directory that holds them all. enyo, layout and onyx ' +
+		'have to sit side by side under the served root:' +
+		'\n\n    python3 layout/test-layout/serve.py 8000 /path/that/holds/them';
+});
+</script>
+
+<script type="module">
+import ready from 'enyo/src/ready.js';
+import loadManifests from './manifests.js';
+import Sampler from './Sampler.js';
+
+// Read all three manifests before building anything: the shell wants the
+// whole list up front, and it is the one place a missing checkout shows up.
+const libraries = await loadManifests();
+
+ready(function () {
+	const boot = document.getElementById('boot');
+	if (boot) { boot.parentNode.removeChild(boot); }
+	new Sampler({libraries: libraries}).renderInto(document.body);
+});
 </script>
 </body>
 </html>

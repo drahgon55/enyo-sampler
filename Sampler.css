@@ -1,0 +1,237 @@
+/* The sampler's own chrome. Everything structural -- the two panels, the
+   collapse under 800px, the fitting rows and columns -- is done by layout and
+   onyx; what is here is colour, type and the few sizes those kinds need told.
+
+   Loaded after onyx.css and layout.css, so it wins ties. That matters in one
+   place, marked below. */
+
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	overflow: hidden;			/* the Panels is enyo-fit; nothing should scroll */
+	background: #2B2B2B;
+	font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* -- the list panel ------------------------------------------------------ */
+
+.sampler-list-panel {
+	width: 300px;
+	min-width: 300px;			/* CollapsingArranger asks for a min-width */
+	background: #FFF;
+	border-right: 1px solid #000;
+}
+
+/* layout.css says this already, under `.enyo-panels-fit-narrow > *`, but with
+   the same specificity as the rule above and from an earlier stylesheet -- so
+   without restating it here the 300px would win and the collapsed list would
+   never fill a phone. 800px is `Panels.isScreenNarrow()`'s own threshold. */
+@media all and (max-width: 800px) {
+	.sampler-list-panel {
+		min-width: 100%;
+		max-width: 100%;
+	}
+}
+
+.sampler-head {
+	padding: 9px 10px 11px;
+	white-space: normal;
+	font-size: 14px;
+}
+
+.sampler-head > * {
+	display: block;
+}
+
+.sampler-head-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.sampler-brand {
+	font-size: 17px;
+	font-weight: 600;
+}
+
+.sampler-head-count {
+	font-size: 10px;
+	letter-spacing: .07em;
+	text-transform: uppercase;
+	color: #B4B6B8;
+}
+
+.sampler-filter-box {
+	display: block;
+	margin: 9px 0 0;
+}
+
+.sampler-filter-box > input {
+	display: block;
+	width: 100%;
+	font-size: 14px;
+}
+
+.sampler-scroller {
+	background: #FFF;
+}
+
+/* A GroupboxHeader used on its own. It brings its own background and its own
+   uppercase white type, so all it needs is the two-column arrangement. */
+.sampler-section {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 5px 10px;
+	position: sticky;			/* the library stays named while you scroll it */
+	top: 0;
+	z-index: 2;
+}
+
+.sampler-section-name {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	text-transform: none;
+	font-size: 13px;
+}
+
+.sampler-section-link {
+	color: #9FCDF2;
+	font-size: 10px;
+	font-weight: 400;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	text-decoration: none;
+}
+
+.sampler-section-link:hover {
+	color: #FFF;
+	text-decoration: underline;
+}
+
+.sampler-item {
+	padding: 9px 12px;
+	font-size: 14px;
+	border-bottom: 1px solid #EDEDED;
+	cursor: pointer;
+}
+
+.sampler-item:hover {
+	background-color: #F4F4F4;
+}
+
+/* `enyo-selected` is enyo's own class and onyx.css already colours it; the
+   bar and the weight are so the current row is obvious at a glance down a
+   long list. */
+.sampler-item.enyo-selected {
+	box-shadow: inset 3px 0 0 #1879CD;
+	font-weight: 600;
+}
+
+.sampler-missing {
+	padding: 10px 12px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #C5221F;
+	background: #FFF4F4;
+	border-bottom: 1px solid #EDEDED;
+}
+
+.sampler-nothing {
+	padding: 18px 12px;
+	font-size: 13px;
+	color: #767676;
+}
+
+/* -- the sample panel ---------------------------------------------------- */
+
+.sampler-detail {
+	background: #FFF;
+}
+
+.sampler-bar {
+	padding-top: 6px;
+	padding-bottom: 7px;
+}
+
+.sampler-bar-text {
+	min-width: 0;				/* or the ellipses below never trigger */
+	padding: 0 6px;
+	overflow: hidden;
+}
+
+.sampler-bar-title {
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.25;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.sampler-bar-blurb {
+	font-size: 11px;
+	line-height: 1.35;
+	color: #C3C5C7;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* No room for it beside a Back button on a phone. */
+@media all and (max-width: 800px) {
+	.sampler-bar-blurb {
+		display: none;
+	}
+}
+
+.sampler-back {
+	margin-right: 4px;
+	flex: none;
+}
+
+/* An anchor wearing onyx's button classes. */
+.sampler-open {
+	flex: none;
+	margin-left: 6px;
+	text-decoration: none;
+	line-height: 20px;
+}
+
+.sampler-stage {
+	position: relative;
+	background: #FFF;
+}
+
+.sampler-frame {
+	display: block;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: #FFF;
+}
+
+.sampler-spinner {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	margin: -16px 0 0 -16px;
+	z-index: 1;
+}
+
+.sampler-empty {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	padding: 24px;
+	font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+	color: #C5221F;
+	white-space: pre-wrap;
+}
