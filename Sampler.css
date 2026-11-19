@@ -105,12 +105,25 @@ body, body.enyo-body-fit {
 	margin: 8px;
 }
 
-/* The header of one. onyx brings its background and its uppercase white type;
-   this is the row it lays out, and the fact that it is a button now. */
+/* The header of one. The dark fill, the gradient over it and the bold white
+   uppercase type are all onyx's `.onyx-groupbox-header`; what is here is the
+   row it lays out, the fact that it is a button now, and its height.
+
+   onyx's own header is 2px of padding and 21px tall, which is a label on top
+   of a box rather than a bar you press -- and this one is a bar you press, and
+   the only thing between two cards. So it gets a toolbar's worth of room.
+
+   That is also why the background is restated: onyx pins the gradient 10px
+   down from the top, which suits 21px and leaves a band across the middle of
+   anything taller. `0 bottom` with `background-size: contain` is onyx's own
+   answer to the same problem -- it is what `.onyx-toolbar` does with this very
+   image, at very nearly this height. */
 .sampler-section {
 	display: flex;
 	align-items: center;
-	padding: 5px 10px;
+	padding: 8px 10px 9px;
+	background-position: 0 bottom;
+	background-size: contain;
 	cursor: pointer;
 	position: sticky;			/* the library stays named while you scroll it */
 	top: 0;
@@ -125,23 +138,24 @@ body, body.enyo-body-fit {
    does not scroll.) */
 
 .sampler-section-caret {
-	font-size: 13px;
-	width: 12px;				/* both marks occupy the same space */
-	margin-right: 5px;
+	font-size: 14px;
+	width: 13px;				/* both marks occupy the same space */
+	margin-right: 6px;
 	opacity: .85;
 }
 
+/* Type is onyx's: 14px, bold, uppercase, white. It was monospace and
+   lowercase here, on the grounds that a library name is a directory name --
+   which was my invention sitting on onyx's bar and reading like neither. */
 .sampler-section-name {
 	flex: 1;					/* takes the slack, so the link stays right */
-	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-	text-transform: none;
-	font-size: 13px;
+	letter-spacing: .02em;
 }
 
 /* How many samples are in there -- worth saying, because once a section is
    shut this is all that is left of it. */
 .sampler-section-count {
-	font-size: 10px;
+	font-size: 11px;
 	font-weight: 400;
 	opacity: .6;
 	margin-right: 8px;
@@ -149,7 +163,7 @@ body, body.enyo-body-fit {
 
 .sampler-section-link {
 	color: #9FCDF2;
-	font-size: 10px;
+	font-size: 11px;
 	font-weight: 400;
 	letter-spacing: .06em;
 	text-transform: uppercase;
