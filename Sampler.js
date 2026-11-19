@@ -1,12 +1,12 @@
 /**
-* The sampler shell: one screen that lists all 78 samples and runs the
+* The sampler shell: one screen that lists all 79 samples and runs the
 * selected one beside the list.
 *
 * It is built out of the three libraries it demonstrates, which is the point
 * -- a sampler whose own chrome is a `Panels` under a `CollapsingArranger`,
 * with `FittableRows`, an `enyo/Scroller` and onyx's toolbars, inputs and a
-* `Groupbox` of `Item`s per library, is itself the eighty-first sample. So the responsive behaviour is
-* not hand-written CSS: wide, the list and the sample sit side by side; under
+* `SectionList` for the samples, is itself the eightieth sample. So the
+* responsive behaviour is not hand-written CSS: wide, the list and the sample sit side by side; under
 * 800px -- `Panels.isScreenNarrow()`, the same threshold as layout's own media
 * query -- the list collapses and the sample slides over it, with a Back
 * button `reflow()` reveals. That is `PanelsFlickrSample` doing master/detail,
@@ -45,11 +45,10 @@ import CollapsingArranger from 'layout/src/CollapsingArranger.js';
 import CarouselArranger from 'layout/src/CarouselArranger.js';
 
 import Button from 'onyx/src/Button/Button.js';
-import Groupbox from 'onyx/src/Groupbox/Groupbox.js';
-import GroupboxHeader from 'onyx/src/GroupboxHeader/GroupboxHeader.js';
+
 import Input from 'onyx/src/Input/Input.js';
 import InputDecorator from 'onyx/src/InputDecorator.js';
-import Item from 'onyx/src/Item/Item.js';
+import SectionList from 'onyx/src/SectionList/SectionList.js';
 import Spinner from 'onyx/src/Spinner/Spinner.js';
 
 import Source from './Source.js';
@@ -58,52 +57,13 @@ import Source from './Source.js';
 * The sample the page opens on when the URL names none.
 *
 * Something has to be running the moment the page loads -- an empty stage
-* beside a list is just the old menu with extra steps -- and of the 78 this is
+* beside a list is just the old menu with extra steps -- and of the 79 this is
 * the one that shows the most framework at once: seven panels and nine
 * arrangers, switched from a picker.
 *
 * @private
 */
 var DEFAULT_SAMPLE = {lib: 'layout', name: 'PanelsSample'};
-
-/**
-* The disclosure marks on a section header. Characters rather than images or an
-* `onyx/Icon`: onyx's icons are a sprite sheet of 32px buttons, which is not
-* what a 13px header wants, and these need no asset to resolve under whatever
-* root the page is served from.
-*
-* @private
-*/
-var CARET_OPEN = '\u25BE';		// down
-var CARET_SHUT = '\u25B8';		// right
-
-/**
-* A row in the list.
-*
-* `onyx/Item` already highlights itself while held; what it has no notion of
-* is *staying* marked, which is what a list driving a detail view needs. The
-* class is enyo's own `enyo-selected`, the one `DataRepeater` applies, so the
-* colour comes from onyx's stylesheet rather than from ours.
-*
-* @class SampleItem
-* @extends module:onyx/Item~Item
-* @private
-*/
-var SampleItem = kind({
-	name: 'sampler.SampleItem',
-	kind: Item,
-	classes: 'sampler-item',
-	published: {
-		selected: false
-	},
-
-	/**
-	* @private
-	*/
-	selectedChanged: function () {
-		this.addRemoveClass('enyo-selected', this.selected);
-	}
-});
 
 /**
 * @class Sampler
@@ -190,7 +150,13 @@ export default kind({
 			// that wants the wheel and the trackpad to behave exactly as they
 			// do everywhere else in the browser.
 			{name: 'scroller', kind: Scroller, fit: true, classes: 'sampler-scroller', components: [
-				{name: 'list', classes: 'sampler-list'},
+				// The list is `onyx/SectionList`: titled sections of items that
+				// fold away, which is this panel's whole job. It came out of this
+				// file -- see `buildList`. Flat and sticky are its defaults, so
+				// neither is stated here; what this repository still owns is how it
+				// looks, in `Sampler.css`.
+				{name: 'list', kind: SectionList, classes: 'sampler-list',
+					onSelect: 'itemSelected'},
 				{name: 'nothing', classes: 'sampler-nothing', showing: false,
 					content: 'Nothing matches that.'}
 			]}
@@ -260,11 +226,10 @@ export default kind({
 	create: kind.inherit(function (sup) {
 		return function () {
 			sup.apply(this, arguments);
-			this.rows = [];
-			this.sections = [];
+			this.entries = [];
 			this.current = null;
 			this.buildList();
-			var n = this.rows.length;
+			var n = this.entries.length;
 			this.$.headCount.setContent(n + (n === 1 ? ' sample' : ' samples'));
 			this.$.filter.setPlaceholder('Filter ' + n + ' samples');
 			if (!n) {
@@ -304,10 +269,10 @@ export default kind({
 				this.applyFilter();
 			}
 
-			if (this.rows.length) {
+			if (this.entries.length) {
 				if (!this.selectPath(location.hash.replace(/^#/, ''))) {
 					if (!this.selectPath(DEFAULT_SAMPLE.lib + '/' + DEFAULT_SAMPLE.name)) {
-						this.selectRow(this.rows[0]);
+						this.selectRow(this.entries[0]);
 					}
 				}
 				// Narrow, the list is a drawer over the sample rather than a
@@ -376,159 +341,95 @@ export default kind({
 	// -- the list ----------------------------------------------------------
 
 	/**
-	* Builds a section per library out of the manifests. Every row carries the
-	* manifest entry it came from, so nothing downstream has to look an index
-	* back up.
+	* Hands the manifests to the list as sections.
 	*
-	* Each section is a real `onyx/Groupbox`, which is where the rows get their
-	* look: onyx frames a groupbox's children with a 1px rule, rounds the first
-	* and the last of them, and `GroupboxHeader` is documented as a groupbox's
-	* first child. The header was standing on its own here before -- the rows
-	* were already `onyx/Item`s, but an Item on its own is nothing but padding
-	* and a selected colour, so the list read as hand-rolled because it was
-	* missing the box the rows were meant to sit in.
+	* There is no list-building here any more. An `onyx/SectionList` is a list
+	* of items divided into titled sections that fold away, which is exactly what
+	* this panel is -- and it came out of this file: the sampler had the only
+	* copy, and a kind made of nothing but `Groupbox`, `GroupboxHeader` and
+	* `Item` belongs in onyx. What is left here is the mapping from a manifest to
+	* `{label, count, accessory, items}`, and the sampler's own look, which is
+	* still this repository's stylesheet.
+	*
+	* Every row carries the `record` it came from. The list hands that back
+	* untouched when the row is tapped, so nothing downstream has to look an
+	* index back up.
 	*
 	* @private
 	*/
 	buildList: function () {
 		var libs = this.libraries || [];
+		var sections = [];
+		this.entries = [];
+
 		for (var i = 0; i < libs.length; i++) {
 			var lib = libs[i];
-			var section = {id: lib.id, rows: [], missing: null, collapsed: false};
-
-			section.box = this.$.list.createComponent({
-				kind: Groupbox,
-				classes: 'sampler-section-box'
-			}, {owner: this});
-
-			// The header is the section's own control, so it is created rather
-			// than declared: three libraries would mean three controls with the
-			// same name in `this.$`, and the collapse needs a handle on the
-			// caret of each.
-			section.header = section.box.createComponent({
-				kind: GroupboxHeader,
-				classes: 'sampler-section',
-				section: section,
-				ontap: 'sectionTapped'
-			}, {owner: this});
-
-			section.caret = section.header.createComponent({
-				classes: 'sampler-section-caret',
-				content: CARET_OPEN
-			}, {owner: this});
-
-			section.header.createComponent({
-				content: lib.id,
-				classes: 'sampler-section-name'
-			}, {owner: this});
-
-			section.header.createComponent({
-				classes: 'sampler-section-count',
-				content: lib.error ? '' : String(lib.samples.length)
-			}, {owner: this});
-
-			// Each library keeps its own annotated index -- the full list with
-			// every blurb spelled out. The rows here are labels only, so that
-			// page is still worth having.
-			//
-			// `linkTapped` is there to stop the tap: the header it sits in
-			// toggles the section, and a link inside a tappable row would
-			// otherwise do both.
-			section.header.createComponent({
-				tag: 'a',
-				classes: 'sampler-section-link',
-				attributes: {href: '../' + lib.id + '/samples/index.html'},
-				content: lib.error ? 'missing' : 'index',
-				ontap: 'linkTapped'
-			}, {owner: this});
+			var items = [];
 
 			if (lib.error) {
-				section.missing = section.box.createComponent({
-					classes: 'sampler-missing',
-					content: 'No ' + lib.id + '/samples under the served root.'
-				}, {owner: this});
+				items.push({classes: 'sampler-missing',
+					content: 'No ' + lib.id + '/samples under the served root.'});
 			}
 
 			for (var j = 0; j < lib.samples.length; j++) {
 				var entry = lib.samples[j];
-				var row = section.box.createComponent({
-					kind: SampleItem,
-					content: entry.label,
-					// The blurb is the row's tooltip rather than a second
-					// line: 78 two-line rows are not a list you can scan.
-					attributes: {title: entry.blurb || ''},
-					ontap: 'rowTapped',
+				var record = {
 					lib: lib.id,
 					entry: entry,
-					// So a row reached from the URL or the keyboard can open
-					// the section it is in.
-					section: section
-				}, {owner: this});
-				row.haystack = [entry.label, entry.name, lib.id, entry.blurb || '']
-					.join(' ').toLowerCase();
-				// Whether the filter matches it. Kept apart from `showing`
-				// because two things decide whether a row is on screen now --
-				// see `refreshSection`.
-				row.matches = true;
-				section.rows.push(row);
-				this.rows.push(row);
+					section: i,
+					// Its place among the section's items, which is not `j` when a
+					// missing-library notice has taken the first one.
+					index: items.length,
+					haystack: [entry.label, entry.name, lib.id, entry.blurb || '']
+						.join(' ').toLowerCase()
+				};
+				items.push({
+					classes: 'sampler-item',
+					content: entry.label,
+					// The blurb is the row's tooltip rather than a second line:
+					// 79 two-line rows are not a list you can scan.
+					attributes: {title: entry.blurb || ''},
+					record: record
+				});
+				this.entries.push(record);
 			}
 
-			this.sections.push(section);
+			sections.push({
+				label: lib.id,
+				count: lib.error ? null : lib.samples.length,
+				// Each library keeps its own annotated index -- the full list with
+				// every blurb spelled out. The rows here are labels only, so that
+				// page is still worth having. As the header's accessory it can be
+				// followed without folding the section it sits in.
+				accessory: {tag: 'a', classes: 'sampler-section-link',
+					attributes: {href: '../' + lib.id + '/samples/index.html'},
+					content: lib.error ? 'missing' : 'index'},
+				items: items
+			});
 		}
+
+		this.$.list.setSections(sections);
 	},
 
-	// -- collapsing --------------------------------------------------------
+	/**
+	* The control standing for a row -- what gets measured and scrolled to. The
+	* list owns it; this is only the lookup.
+	*
+	* @private
+	*/
+	controlFor: function (record) {
+		return record ? this.$.list.controlFor(record.section, record.index) : null;
+	},
 
 	/**
 	* @private
 	*/
-	sectionTapped: function (sender) {
-		var section = sender.section;
-		section.collapsed = !section.collapsed;
-		this.refreshSection(section);
-		return true;
-	},
-
-	/**
-	* Swallows the tap on the index link so it does not also toggle the section
-	* the link sits in. The anchor still navigates: enyo's tap handling does not
-	* cancel the click underneath it.
-	*
-	* @private
-	*/
-	linkTapped: function () {
-		return true;
-	},
-
-	/**
-	* Brings a section's rows, caret and corners into line with its state.
-	*
-	* Whether a row is on screen is two conditions, not one -- it has to match
-	* the filter and its section has to be open -- so both go through here
-	* rather than either writing `showing` directly and clobbering the other.
-	*
-	* @private
-	*/
-	refreshSection: function (section) {
-		section.caret.setContent(section.collapsed ? CARET_SHUT : CARET_OPEN);
-		// Nothing in the stylesheet reads this: the rows run edge to edge now,
-		// so being shut costs the section no corners. It is here because it is
-		// the one place the state is legible from outside -- from devtools, or
-		// from a console probe -- and the alternative is reading a caret
-		// character back out of the DOM.
-		section.box.addRemoveClass('sampler-collapsed', section.collapsed);
-
-		for (var i = 0; i < section.rows.length; i++) {
-			section.rows[i].setShowing(section.rows[i].matches && !section.collapsed);
+	itemSelected: function (sender, event) {
+		// The missing-library notice is a row like any other, and choosing it
+		// would point the frame at nothing.
+		if (event.item.record) {
+			this.selectRow(event.item.record);
 		}
-	},
-
-	/**
-	* @private
-	*/
-	rowTapped: function (sender) {
-		this.selectRow(sender);
 		return true;
 	},
 
@@ -536,22 +437,26 @@ export default kind({
 	* @private
 	*/
 	findRow: function (libId, name) {
-		for (var i = 0; i < this.rows.length; i++) {
-			if (this.rows[i].lib === libId && this.rows[i].entry.name === name) {
-				return this.rows[i];
+		for (var i = 0; i < this.entries.length; i++) {
+			if (this.entries[i].lib === libId && this.entries[i].entry.name === name) {
+				return this.entries[i];
 			}
 		}
 		return null;
 	},
 
 	/**
+	* The rows the keyboard can reach: what the filter left, less whatever is
+	* inside a folded section.
+	*
 	* @private
 	*/
 	visibleRows: function () {
 		var out = [];
-		for (var i = 0; i < this.rows.length; i++) {
-			if (this.rows[i].getShowing()) {
-				out.push(this.rows[i]);
+		for (var i = 0; i < this.entries.length; i++) {
+			var control = this.controlFor(this.entries[i]);
+			if (control && control.getShowing()) {
+				out.push(this.entries[i]);
 			}
 		}
 		return out;
@@ -562,7 +467,7 @@ export default kind({
 	/**
 	* Points the frame at a row's sample.
 	*
-	* @param {module:onyx/Item~Item} row - A row built by `buildList()`.
+	* @param {Object} row - A record built by `buildList()`.
 	* @param {Boolean|String} [reveal] - Scroll the row into view: `true` moves
 	*	the list as little as will do it, `'top'` puts the row at the top. Set
 	*	when the selection did not come from tapping the row itself.
@@ -572,20 +477,14 @@ export default kind({
 		if (!row) {
 			return false;
 		}
-		// A row reached from the URL, from Back, or with the arrow keys can be
-		// in a section that is shut, and a selection you cannot see is worse
-		// than no selection.
-		if (row.section && row.section.collapsed) {
-			row.section.collapsed = false;
-			this.refreshSection(row.section);
-		}
 		var url = '../' + row.lib + '/samples/sample.html?s=' +
 			encodeURIComponent(row.entry.name);
 
 		if (this.current !== row) {
-			for (var i = 0; i < this.rows.length; i++) {
-				this.rows[i].setSelected(this.rows[i] === row);
-			}
+			// Marks the row, and opens its section if a row reached from the
+			// URL, from Back or with the arrow keys is inside a shut one -- a
+			// selection you cannot see is worse than no selection.
+			this.$.list.selectItem(row.section, row.index);
 			this.current = row;
 			this.$.barTitle.setContent(row.entry.label);
 			this.$.barBlurb.setContent(row.entry.blurb || '');
@@ -622,7 +521,7 @@ export default kind({
 	* sticky section header is, so the row you asked for ends up underneath
 	* it. Hence the header's height as a margin.
 	*
-	* @param {module:onyx/Item~Item} row - The row to show.
+	* @param {Object} row - A record built by `buildList()`.
 	* @param {Boolean} [toTop] - Put the row at the top of the list rather than
 	*	moving as little as possible. Arriving at a sample from a link should
 	*	land on it with its neighbours below; stepping through with the arrow
@@ -631,7 +530,8 @@ export default kind({
 	*/
 	reveal: function (row, toTop) {
 		this.startJob('reveal', function () {
-			var node = row.hasNode();
+			var control = this.controlFor(row);
+			var node = control && control.hasNode();
 			var listNode = this.$.list.hasNode();
 			var scroller = this.$.scroller;
 			var scrollerNode = scroller.hasNode();
@@ -647,13 +547,14 @@ export default kind({
 			// toolbar above takes its height.
 			var offset = node.getBoundingClientRect().top -
 				listNode.getBoundingClientRect().top;
-			var header = this.sections.length && this.sections[0].header.hasNode();
+			var top = this.$.list.headerFor(row.section);
+			var header = top && top.hasNode();
 			var margin = header ? header.offsetHeight : 0;
-			var top = scroller.getScrollTop();
+			var at = scroller.getScrollTop();
 
-			if (toTop || offset < top + margin) {
+			if (toTop || offset < at + margin) {
 				scroller.setScrollTop(Math.max(0, offset - margin));
-			} else if (offset + node.offsetHeight > top + scrollerNode.clientHeight) {
+			} else if (offset + node.offsetHeight > at + scrollerNode.clientHeight) {
 				scroller.setScrollTop(offset + node.offsetHeight - scrollerNode.clientHeight);
 			}
 		}, 1);
@@ -779,34 +680,17 @@ export default kind({
 	applyFilter: function () {
 		var terms = this.$.filter.getValue().toLowerCase().split(/\s+/)
 			.filter(function (t) { return t.length; });
-		var shown = 0;
 
-		for (var i = 0; i < this.sections.length; i++) {
-			var section = this.sections[i];
-			var hits = 0;
-			for (var j = 0; j < section.rows.length; j++) {
-				var row = section.rows[j];
-				row.matches = terms.every(function (t) {
-					return row.haystack.indexOf(t) >= 0;
-				});
-				if (row.matches) {
-					hits++;
-				}
-			}
-			shown += hits;
-			// A filter opens a section that has a hit in it, rather than
-			// quietly overriding the collapse while the caret still says shut.
-			// The section stays open afterwards, which is the honest outcome of
-			// having been shown what is in it.
-			if (hits && terms.length) {
-				section.collapsed = false;
-			}
-			section.box.setShowing(hits > 0 || !terms.length);
-			if (section.missing) {
-				section.missing.setShowing(!terms.length);
-			}
-			this.refreshSection(section);
-		}
+		// The list hides what does not match, hides a section left with
+		// nothing, and opens a shut section that holds a hit. The matching is
+		// this page's: a row is kept when every word typed appears somewhere
+		// in it. A missing-library notice carries no record and so matches
+		// nothing, which is what hides it while a filter is running.
+		var shown = this.$.list.filter(terms.length ? function (item) {
+			return !!item.record && terms.every(function (t) {
+				return item.record.haystack.indexOf(t) >= 0;
+			});
+		} : null);
 
 		this.$.nothing.setShowing(!shown && terms.length > 0);
 	},

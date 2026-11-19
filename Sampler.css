@@ -96,83 +96,50 @@ body, body.enyo-body-fit {
 	overscroll-behavior: contain;
 }
 
-/* One `onyx/Groupbox` per library -- but flattened out, so the list reads as
-   one list rather than three cards stacked in a column. The groupbox stays
-   because it is what groups the rows for the fold and what rules a line
-   between them; what goes is the framing that made it a box.
+/* The list is an `onyx/SectionList`, which arrives flat, sticky and folding;
+   what is left for this file is how it looks. Everything below names onyx's
+   classes because that is how a widget library is restyled -- the same way a
+   groupbox would be. */
 
-   Full bleed means no side borders and no rounded ends. onyx names its first
-   and last children explicitly -- that is where the rounding and the top
-   border come from -- so this has to name them too, or those two keep a frame
-   nothing else has. */
-.sampler-section-box {
-	margin: 0;
-}
-
-.sampler-section-box > *,
-.sampler-section-box > *:first-child,
-.sampler-section-box > *:last-child {
-	border-width: 0 0 1px;
-	border-radius: 0;
-	/* onyx's #aaa is a frame colour, which is too strong for a rule repeated
-	   down 78 rows at full width. */
+/* onyx's #aaa is a frame colour, which is too strong for a rule repeated down
+   79 rows at full width. */
+.sampler-list .onyx-section-list-section > * {
 	border-color: #DCDCDC;
 }
 
-/* The header of one. The dark fill, the gradient over it and the bold white
-   uppercase type are all onyx's `.onyx-groupbox-header`; what is here is the
-   row it lays out, the fact that it is a button now, and its height.
+/* The dark fill, the gradient over it and the bold white uppercase type are
+   all onyx's `.onyx-groupbox-header`; the row it lays out and the fact that it
+   is a button are `SectionList`'s. What is left here is its height.
 
    onyx's own header is 2px of padding and 21px tall, which is a label on top
    of a box rather than a bar you press -- and this one is a bar you press, and
-   the only thing between two cards. So it gets a toolbar's worth of room.
+   the only thing dividing one library from the next. So it gets a toolbar's
+   worth of room.
 
    That is also why the background is restated: onyx pins the gradient 10px
    down from the top, which suits 21px and leaves a band across the middle of
    anything taller. `0 bottom` with `background-size: contain` is onyx's own
    answer to the same problem -- it is what `.onyx-toolbar` does with this very
    image, at very nearly this height. */
-.sampler-section {
-	display: flex;
-	align-items: center;
+.sampler-list .onyx-section-list-header {
 	padding: 8px 10px 9px;
 	background-position: 0 bottom;
 	background-size: contain;
-	cursor: pointer;
-	position: sticky;			/* the library stays named while you scroll it */
-	top: 0;
-	z-index: 2;
 }
 
-/* Sticky inside the box rather than inside the scroller, which is what makes
-   this work without `overflow: hidden` anywhere: a header rides down only as
-   far as its own section goes, then leaves with it. (`overflow: hidden` on the
-   box would have been the easy way to clip the corners, and it would have
-   killed the stickiness -- it makes the box the sticky container, and the box
-   does not scroll.) */
-
-.sampler-section-caret {
+.sampler-list .onyx-section-list-caret {
 	font-size: 14px;
-	width: 13px;				/* both marks occupy the same space */
-	margin-right: 6px;
 	opacity: .85;
 }
 
-/* Type is onyx's: 14px, bold, uppercase, white. It was monospace and
-   lowercase here, on the grounds that a library name is a directory name --
-   which was my invention sitting on onyx's bar and reading like neither. */
-.sampler-section-name {
-	flex: 1;					/* takes the slack, so the link stays right */
+/* Type is onyx's: 14px, bold, uppercase, white. */
+.sampler-list .onyx-section-list-label {
 	letter-spacing: .02em;
 }
 
-/* How many samples are in there -- worth saying, because once a section is
-   shut this is all that is left of it. */
-.sampler-section-count {
+.sampler-list .onyx-section-list-count {
 	font-size: 11px;
-	font-weight: 400;
 	opacity: .6;
-	margin-right: 8px;
 }
 
 .sampler-section-link {
@@ -194,8 +161,8 @@ body, body.enyo-body-fit {
 	cursor: pointer;
 }
 
-/* An Item has no background of its own, so the grey behind the card would
-   show through it -- but the white has to exclude the selected row, or it
+/* An Item has no background of its own, so whatever is behind the list shows
+   through it -- but the white has to exclude the selected row, or it
    outweighs onyx's own `.enyo-selected` colour, which is a bare class
    selector in a sheet that is linked earlier. It did: the selection went
    white and only the blue edge was left of it. */
