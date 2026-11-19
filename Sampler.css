@@ -90,28 +90,61 @@ body, body.enyo-body-fit {
 }
 
 .sampler-scroller {
-	background: #FFF;
+	/* Not white: the sections are onyx groupboxes, which are white cards with
+	   a 1px frame, and a card needs something to be a card against. */
+	background: #EDEDED;
 	/* Keep a flick that overruns the end of the list from chaining out to the
 	   document and taking the shell with it. */
 	overscroll-behavior: contain;
 }
 
-/* A GroupboxHeader used on its own. It brings its own background and its own
-   uppercase white type, so all it needs is the two-column arrangement. */
+/* One `onyx/Groupbox` per library. Everything that makes the rows look like
+   rows -- the 1px frame, the rule between them, the rounded first and last --
+   is onyx's `.onyx-groupbox > *`, so all this says is where the card sits. */
+.sampler-section-box {
+	margin: 8px;
+}
+
+/* The header of one. onyx brings its background and its uppercase white type;
+   this is the row it lays out, and the fact that it is a button now. */
 .sampler-section {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
 	padding: 5px 10px;
+	cursor: pointer;
 	position: sticky;			/* the library stays named while you scroll it */
 	top: 0;
 	z-index: 2;
 }
 
+/* Sticky inside the box rather than inside the scroller, which is what makes
+   this work without `overflow: hidden` anywhere: a header rides down only as
+   far as its own section goes, then leaves with it. (`overflow: hidden` on the
+   box would have been the easy way to clip the corners, and it would have
+   killed the stickiness -- it makes the box the sticky container, and the box
+   does not scroll.) */
+
+.sampler-section-caret {
+	font-size: 13px;
+	width: 12px;				/* both marks occupy the same space */
+	margin-right: 5px;
+	opacity: .85;
+}
+
 .sampler-section-name {
+	flex: 1;					/* takes the slack, so the link stays right */
 	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 	text-transform: none;
 	font-size: 13px;
+}
+
+/* How many samples are in there -- worth saying, because once a section is
+   shut this is all that is left of it. */
+.sampler-section-count {
+	font-size: 10px;
+	font-weight: 400;
+	opacity: .6;
+	margin-right: 8px;
 }
 
 .sampler-section-link {
@@ -128,14 +161,37 @@ body, body.enyo-body-fit {
 	text-decoration: underline;
 }
 
+/* Shut, the header is the whole card, so it takes both pairs of corners.
+   onyx's own rule for a groupbox's first child gives it the top pair only,
+   and it cannot know the rest of the box is hidden. */
+.sampler-collapsed > .sampler-section {
+	border-radius: 4px;
+}
+
+/* Padding and type are onyx's (`.onyx-item`, `.onyx-groupbox > *`). */
 .sampler-item {
-	padding: 9px 12px;
-	font-size: 14px;
-	border-bottom: 1px solid #EDEDED;
 	cursor: pointer;
 }
 
-.sampler-item:hover {
+/* An Item has no background of its own, so the grey behind the card would
+   show through it -- but the white has to exclude the selected row, or it
+   outweighs onyx's own `.enyo-selected` colour, which is a bare class
+   selector in a sheet that is linked earlier. It did: the selection went
+   white and only the blue edge was left of it. */
+.sampler-item:not(.enyo-selected) {
+	background: #FFF;
+}
+
+/* The last row the filter left showing. onyx rounds the last child, which is
+   structural and so stays on a hidden row; `refreshSection` moves this one. */
+.sampler-item-last {
+	border-radius: 0 0 4px 4px;
+}
+
+/* `:not()` so a hover cannot grey out the selected row: onyx colours
+   `.enyo-selected` with a plain class selector, which a `:hover` would
+   outweigh. */
+.sampler-item:not(.enyo-selected):hover {
 	background-color: #F4F4F4;
 }
 
@@ -153,7 +209,6 @@ body, body.enyo-body-fit {
 	line-height: 1.5;
 	color: #C5221F;
 	background: #FFF4F4;
-	border-bottom: 1px solid #EDEDED;
 }
 
 .sampler-nothing {

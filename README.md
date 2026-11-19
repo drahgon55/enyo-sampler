@@ -19,6 +19,7 @@ through before you see Enyo do something.
 | | |
 | --- | --- |
 | Pick one | Tap a row. The sample loads beside it. |
+| Shut one | Tap a library's header to fold its section away. A filter opens a section that has a hit in it, and so does arriving at a sample by URL or with the arrow keys — a selection you cannot see is worse than none. |
 | Find one | Type in the filter. It matches the label, the module name, the library and the blurb — so `drag`, `locale` or `arranger` all find something. |
 | Keyboard | Return takes the first match, Up and Down step through the matches, Escape clears the filter. Two or three letters and a Return is the whole journey. |
 | Read one | **Source** slides a second panel in over the sample, holding the code behind it: the sample's own module, any helper it imports, and its stylesheet. **Copy** puts the file on the clipboard. Press it again and the panel slides back out. |
@@ -94,7 +95,9 @@ links sideways out of itself, to sibling checkouts, by relative path.
 
 **It is built out of the three libraries it demonstrates**, which is the
 point: a `Panels` under a `CollapsingArranger`, with `FittableRows`, an
-`enyo/Scroller`, and onyx's toolbars, items and inputs. The responsive
+`enyo/Scroller`, and onyx's toolbars, inputs, and a `Groupbox` of `Item`s per
+library — so the rows are framed, ruled and rounded by onyx's own stylesheet
+rather than by anything here. The responsive
 behaviour is not hand-written CSS — it is `PanelsFlickrSample` doing
 master/detail, pointed at samples instead of photographs. So the sampler is
 itself the seventy-ninth sample, and if the layout breaks, something in layout

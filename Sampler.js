@@ -4,8 +4,8 @@
 *
 * It is built out of the three libraries it demonstrates, which is the point
 * -- a sampler whose own chrome is a `Panels` under a `CollapsingArranger`,
-* with `FittableRows`, an `enyo/Scroller` and onyx's toolbars, items and
-* inputs, is itself the eighty-first sample. So the responsive behaviour is
+* with `FittableRows`, an `enyo/Scroller` and onyx's toolbars, inputs and a
+* `Groupbox` of `Item`s per library, is itself the eighty-first sample. So the responsive behaviour is
 * not hand-written CSS: wide, the list and the sample sit side by side; under
 * 800px -- `Panels.isScreenNarrow()`, the same threshold as layout's own media
 * query -- the list collapses and the sample slides over it, with a Back
@@ -45,6 +45,7 @@ import CollapsingArranger from 'layout/src/CollapsingArranger.js';
 import CarouselArranger from 'layout/src/CarouselArranger.js';
 
 import Button from 'onyx/src/Button/Button.js';
+import Groupbox from 'onyx/src/Groupbox/Groupbox.js';
 import GroupboxHeader from 'onyx/src/GroupboxHeader/GroupboxHeader.js';
 import Input from 'onyx/src/Input/Input.js';
 import InputDecorator from 'onyx/src/InputDecorator.js';
@@ -64,6 +65,17 @@ import Source from './Source.js';
 * @private
 */
 var DEFAULT_SAMPLE = {lib: 'layout', name: 'PanelsSample'};
+
+/**
+* The disclosure marks on a section header. Characters rather than images or an
+* `onyx/Icon`: onyx's icons are a sprite sheet of 32px buttons, which is not
+* what a 13px header wants, and these need no asset to resolve under whatever
+* root the page is served from.
+*
+* @private
+*/
+var CARET_OPEN = '\u25BE';		// down
+var CARET_SHUT = '\u25B8';		// right
 
 /**
 * A row in the list.
@@ -368,30 +380,70 @@ export default kind({
 	* manifest entry it came from, so nothing downstream has to look an index
 	* back up.
 	*
+	* Each section is a real `onyx/Groupbox`, which is where the rows get their
+	* look: onyx frames a groupbox's children with a 1px rule, rounds the first
+	* and the last of them, and `GroupboxHeader` is documented as a groupbox's
+	* first child. The header was standing on its own here before -- the rows
+	* were already `onyx/Item`s, but an Item on its own is nothing but padding
+	* and a selected colour, so the list read as hand-rolled because it was
+	* missing the box the rows were meant to sit in.
+	*
 	* @private
 	*/
 	buildList: function () {
 		var libs = this.libraries || [];
 		for (var i = 0; i < libs.length; i++) {
 			var lib = libs[i];
-			var section = {id: lib.id, rows: [], missing: null};
+			var section = {id: lib.id, rows: [], missing: null, collapsed: false};
 
-			section.header = this.$.list.createComponent({
+			section.box = this.$.list.createComponent({
+				kind: Groupbox,
+				classes: 'sampler-section-box'
+			}, {owner: this});
+
+			// The header is the section's own control, so it is created rather
+			// than declared: three libraries would mean three controls with the
+			// same name in `this.$`, and the collapse needs a handle on the
+			// caret of each.
+			section.header = section.box.createComponent({
 				kind: GroupboxHeader,
 				classes: 'sampler-section',
-				components: [
-					{content: lib.id, classes: 'sampler-section-name'},
-					// Each library keeps its own annotated index -- the full
-					// list with every blurb spelled out. The rows here are
-					// labels only, so that page is still worth having.
-					{tag: 'a', classes: 'sampler-section-link',
-						attributes: {href: '../' + lib.id + '/samples/index.html'},
-						content: lib.error ? 'missing' : 'index'}
-				]
+				section: section,
+				ontap: 'sectionTapped'
+			}, {owner: this});
+
+			section.caret = section.header.createComponent({
+				classes: 'sampler-section-caret',
+				content: CARET_OPEN
+			}, {owner: this});
+
+			section.header.createComponent({
+				content: lib.id,
+				classes: 'sampler-section-name'
+			}, {owner: this});
+
+			section.header.createComponent({
+				classes: 'sampler-section-count',
+				content: lib.error ? '' : String(lib.samples.length)
+			}, {owner: this});
+
+			// Each library keeps its own annotated index -- the full list with
+			// every blurb spelled out. The rows here are labels only, so that
+			// page is still worth having.
+			//
+			// `linkTapped` is there to stop the tap: the header it sits in
+			// toggles the section, and a link inside a tappable row would
+			// otherwise do both.
+			section.header.createComponent({
+				tag: 'a',
+				classes: 'sampler-section-link',
+				attributes: {href: '../' + lib.id + '/samples/index.html'},
+				content: lib.error ? 'missing' : 'index',
+				ontap: 'linkTapped'
 			}, {owner: this});
 
 			if (lib.error) {
-				section.missing = this.$.list.createComponent({
+				section.missing = section.box.createComponent({
 					classes: 'sampler-missing',
 					content: 'No ' + lib.id + '/samples under the served root.'
 				}, {owner: this});
@@ -399,7 +451,7 @@ export default kind({
 
 			for (var j = 0; j < lib.samples.length; j++) {
 				var entry = lib.samples[j];
-				var row = this.$.list.createComponent({
+				var row = section.box.createComponent({
 					kind: SampleItem,
 					content: entry.label,
 					// The blurb is the row's tooltip rather than a second
@@ -407,15 +459,79 @@ export default kind({
 					attributes: {title: entry.blurb || ''},
 					ontap: 'rowTapped',
 					lib: lib.id,
-					entry: entry
+					entry: entry,
+					// So a row reached from the URL or the keyboard can open
+					// the section it is in.
+					section: section
 				}, {owner: this});
 				row.haystack = [entry.label, entry.name, lib.id, entry.blurb || '']
 					.join(' ').toLowerCase();
+				// Whether the filter matches it. Kept apart from `showing`
+				// because two things decide whether a row is on screen now --
+				// see `refreshSection`.
+				row.matches = true;
 				section.rows.push(row);
 				this.rows.push(row);
 			}
 
 			this.sections.push(section);
+		}
+	},
+
+	// -- collapsing --------------------------------------------------------
+
+	/**
+	* @private
+	*/
+	sectionTapped: function (sender) {
+		var section = sender.section;
+		section.collapsed = !section.collapsed;
+		this.refreshSection(section);
+		return true;
+	},
+
+	/**
+	* Swallows the tap on the index link so it does not also toggle the section
+	* the link sits in. The anchor still navigates: enyo's tap handling does not
+	* cancel the click underneath it.
+	*
+	* @private
+	*/
+	linkTapped: function () {
+		return true;
+	},
+
+	/**
+	* Brings a section's rows, caret and corners into line with its state.
+	*
+	* Whether a row is on screen is two conditions, not one -- it has to match
+	* the filter and its section has to be open -- so both go through here
+	* rather than either writing `showing` directly and clobbering the other.
+	*
+	* @private
+	*/
+	refreshSection: function (section) {
+		section.caret.setContent(section.collapsed ? CARET_SHUT : CARET_OPEN);
+		// onyx rounds a groupbox's bottom corners with `:last-child`, which is
+		// structural: a hidden row is still the last child, so the rounding
+		// stays on a `display: none` row and whatever you can see ends square.
+		// CSS cannot ask for the last *visible* child, so this says which it
+		// is -- and when a shut section is nothing but its header, the header
+		// takes both corners instead.
+		section.box.addRemoveClass('sampler-collapsed', section.collapsed);
+
+		var last = null;
+		for (var i = 0; i < section.rows.length; i++) {
+			var row = section.rows[i];
+			var show = row.matches && !section.collapsed;
+			row.setShowing(show);
+			row.removeClass('sampler-item-last');
+			if (show) {
+				last = row;
+			}
+		}
+		if (last) {
+			last.addClass('sampler-item-last');
 		}
 	},
 
@@ -466,6 +582,13 @@ export default kind({
 	selectRow: function (row, reveal) {
 		if (!row) {
 			return false;
+		}
+		// A row reached from the URL, from Back, or with the arrow keys can be
+		// in a section that is shut, and a selection you cannot see is worse
+		// than no selection.
+		if (row.section && row.section.collapsed) {
+			row.section.collapsed = false;
+			this.refreshSection(row.section);
 		}
 		var url = '../' + row.lib + '/samples/sample.html?s=' +
 			encodeURIComponent(row.entry.name);
@@ -674,19 +797,26 @@ export default kind({
 			var hits = 0;
 			for (var j = 0; j < section.rows.length; j++) {
 				var row = section.rows[j];
-				var match = terms.every(function (t) {
+				row.matches = terms.every(function (t) {
 					return row.haystack.indexOf(t) >= 0;
 				});
-				row.setShowing(match);
-				if (match) {
+				if (row.matches) {
 					hits++;
 				}
 			}
 			shown += hits;
-			section.header.setShowing(hits > 0 || !terms.length);
+			// A filter opens a section that has a hit in it, rather than
+			// quietly overriding the collapse while the caret still says shut.
+			// The section stays open afterwards, which is the honest outcome of
+			// having been shown what is in it.
+			if (hits && terms.length) {
+				section.collapsed = false;
+			}
+			section.box.setShowing(hits > 0 || !terms.length);
 			if (section.missing) {
 				section.missing.setShowing(!terms.length);
 			}
+			this.refreshSection(section);
 		}
 
 		this.$.nothing.setShowing(!shown && terms.length > 0);
