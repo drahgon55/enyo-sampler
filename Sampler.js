@@ -42,6 +42,7 @@ import FittableRows from 'layout/src/FittableRows.js';
 import FittableColumns from 'layout/src/FittableColumns.js';
 import Panels from 'layout/src/Panels/Panels.js';
 import CollapsingArranger from 'layout/src/CollapsingArranger.js';
+import CarouselArranger from 'layout/src/CarouselArranger.js';
 
 import Button from 'onyx/src/Button/Button.js';
 import GroupboxHeader from 'onyx/src/GroupboxHeader/GroupboxHeader.js';
@@ -49,6 +50,8 @@ import Input from 'onyx/src/Input/Input.js';
 import InputDecorator from 'onyx/src/InputDecorator.js';
 import Item from 'onyx/src/Item/Item.js';
 import Spinner from 'onyx/src/Spinner/Spinner.js';
+
+import Source from './Source.js';
 
 /**
 * The sample the page opens on when the URL names none.
@@ -118,6 +121,19 @@ export default kind({
 	arrangerKind: CollapsingArranger,
 
 	/**
+	* `Panels` is draggable by default, which here means a drag anywhere the
+	* sample does not claim -- the toolbar, the gap beside a button -- slides
+	* the whole shell sideways. Every move between the two panels is a button
+	* or a row tap, so the gesture only ever fires by accident.
+	*
+	* Turning it off at the top also settles it for the frame: a drag that
+	* starts on the sample cannot slide the list out from under it.
+	*
+	* @private
+	*/
+	draggable: false,
+
+	/**
 	* The list panel is wide enough to read labels in and no wider; the sample
 	* gets the rest. `CollapsingArranger` hands the remaining width to the last
 	* panel, so this is the only width the shell has to state.
@@ -183,19 +199,44 @@ export default kind({
 				// A real anchor, not a Button with a tap handler: middle-click,
 				// cmd-click and Copy Link Address all work, and nothing has to
 				// get past a popup blocker.
+				{name: 'sourceToggle', kind: Button, classes: 'sampler-source-toggle',
+					content: 'Source', ontap: 'toggleSource'},
 				{name: 'open', tag: 'a', classes: 'onyx-button sampler-open',
 					content: 'Open alone', attributes: {target: '_blank', rel: 'noopener'}}
 			]},
-			{name: 'stage', fit: true, classes: 'sampler-stage', components: [
-				// `allow` because two samples -- enyo's Fullscreen and Video --
-				// call requestFullscreen(), which a frame is refused by
-				// default. Without it the shell would quietly break samples
-				// that work on their own pages.
-				{name: 'frame', tag: 'iframe', classes: 'sampler-frame',
-					attributes: {title: 'The selected sample', frameborder: '0',
-						allow: 'fullscreen', allowfullscreen: 'allowfullscreen'}},
-				{name: 'spinner', kind: Spinner, classes: 'sampler-spinner', showing: false},
-				{name: 'empty', classes: 'sampler-empty', showing: false}
+			// A second Panels inside the first, which is what makes the source
+			// slide rather than appear. `CarouselArranger` lays its panels out
+			// in a row and moves along it, so the source comes in from the
+			// right and goes back out the way it came -- the two directions
+			// read as opposites, which is the whole point of a drawer.
+			//
+			// It is the arranger that needs its panels to declare a width
+			// (`.sampler-card` does, in the stylesheet): panels are absolutely
+			// positioned, so without one they would shrink to their content
+			// and the carousel would have nothing to measure.
+			//
+			// The two obvious alternatives are worse here. `LeftRightArranger`
+			// treats the panels as a wrapping ring and balances one on each
+			// side, which with exactly two puts the source on the left and
+			// lets you cycle forever. `CardSlideInArranger` always slides in
+			// from the right, so going back looks like going on, and it hides
+			// the panel it leaves -- which would mean display:none on a frame
+			// with a live sample in it every time the source opens.
+			{name: 'stage', fit: true, kind: Panels, classes: 'sampler-stage',
+				arrangerKind: CarouselArranger, draggable: false,
+				realtimeFit: true, components: [
+				{name: 'sampleCard', classes: 'sampler-card', components: [
+					// `allow` because two samples -- enyo's Fullscreen and
+					// Video -- call requestFullscreen(), which a frame is
+					// refused by default. Without it the shell would quietly
+					// break samples that work on their own pages.
+					{name: 'frame', tag: 'iframe', classes: 'sampler-frame',
+						attributes: {title: 'The selected sample', frameborder: '0',
+							allow: 'fullscreen', allowfullscreen: 'allowfullscreen'}},
+					{name: 'spinner', kind: Spinner, classes: 'sampler-spinner', showing: false},
+					{name: 'empty', classes: 'sampler-empty', showing: false}
+				]},
+				{name: 'sourceView', kind: Source, classes: 'sampler-card'}
 			]}
 		]}
 	],
@@ -297,6 +338,20 @@ export default kind({
 			}
 			this.narrow = narrow;
 			this.$.back.setShowing(narrow);
+			// Four controls do not fit a phone's toolbar, and the title is
+			// what loses. `Open alone` is the one to drop: what it buys you is
+			// the sample with the shell out of the way, and at this width the
+			// sample already has the whole screen.
+			//
+			// It has to be `setShowing`, not a `display: none` in the
+			// stylesheet. `FittableLayout` decides what to measure from each
+			// child's `showing` property rather than from its computed style
+			// (`FittableLayout.js:175`), so a control hidden behind a media
+			// query is still counted -- and the fitting child's width comes
+			// out of a sum that includes a box that is not there. It did:
+			// the title was handed 1837px inside a 375px bar, which pushed
+			// every button after it off the screen.
+			this.$.open.setShowing(!narrow);
 			// Widening with the list collapsed would leave it off-screen with
 			// nothing to bring it back, since Back is gone.
 			if (!narrow && this.getIndex() !== 0) {
@@ -424,6 +479,7 @@ export default kind({
 			this.$.barBlurb.setContent(row.entry.blurb || '');
 			this.$.open.setAttribute('href', url);
 			this.$.spinner.show();
+			this.showSample();
 			this.load(url);
 			this.setPath(row.lib + '/' + row.entry.name);
 		}
@@ -540,6 +596,40 @@ export default kind({
 	showList: function () {
 		this.setIndex(0);
 		return true;
+	},
+
+	// -- the source card ---------------------------------------------------
+
+	/**
+	* Slides the source card in, or back out if it is already in. The source
+	* is read on the way in rather than when the sample is chosen, so a run
+	* through the list costs nothing until the button is pressed.
+	*
+	* @private
+	*/
+	toggleSource: function () {
+		if (this.$.stage.getIndex() === 1) {
+			this.showSample();
+		} else if (this.current) {
+			this.$.sourceView.load(this.current.lib, this.current.entry.name);
+			this.$.stage.setIndex(1);
+			// The button says what the next press gives you, not where you are.
+			this.$.sourceToggle.setContent('Sample');
+		}
+		return true;
+	},
+
+	/**
+	* Back to the running sample. Choosing another sample calls this too:
+	* clicking a row asks to see that sample, not its source.
+	*
+	* @private
+	*/
+	showSample: function () {
+		if (this.$.stage.getIndex() !== 0) {
+			this.$.stage.setIndex(0);
+		}
+		this.$.sourceToggle.setContent('Source');
 	},
 
 	// -- the URL -----------------------------------------------------------

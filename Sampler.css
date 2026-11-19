@@ -217,6 +217,11 @@ body, body.enyo-body-fit {
 	line-height: 20px;
 }
 
+.sampler-source-toggle {
+	flex: none;
+	margin-left: 6px;
+}
+
 .sampler-stage {
 	position: relative;
 	background: #FFF;
@@ -251,3 +256,79 @@ body, body.enyo-body-fit {
 	color: #C5221F;
 	white-space: pre-wrap;
 }
+
+
+/* -- the source card ----------------------------------------------------- */
+
+/* `CarouselArranger` measures each panel to lay the row out, and panels are
+   absolutely positioned -- so without a width stated here both cards would
+   shrink to their content and the carousel would have nothing to move. This
+   is the `min-width` its documentation asks for.
+
+   `position` has to be restated for a reason worth knowing: layout.css gives
+   panels `position: absolute` with `.enyo-arranger > *` on line 125, and then
+   gives every FittableRows `position: relative` with
+   `.enyo-fittable-rows-layout` on line 203. Equal specificity, later rule
+   wins -- so a FittableRows used *directly* as a panel silently comes out
+   relative, and the `top: 0; bottom: 0` the arranger sets on it does nothing.
+   That is exactly what the source card is, and it collapsed to the height of
+   its own toolbar until this line. */
+.sampler-card {
+	position: absolute;
+	min-width: 100%;
+	max-width: 100%;
+	background: #FFF;
+}
+
+.sampler-source {
+	background: #FFF;
+}
+
+.sampler-source-bar {
+	padding-top: 5px;
+	padding-bottom: 6px;
+}
+
+.sampler-files {
+	min-width: 0;				/* same reason as .sampler-bar-text */
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* A plain onyx Button per file. The one being shown is marked rather than
+   disabled, so it still reads as part of the set. */
+.sampler-file {
+	margin-right: 4px;
+	font-size: 12px;
+}
+
+.sampler-file-on {
+	box-shadow: inset 0 -2px 0 #1879CD;
+	font-weight: 600;
+}
+
+.sampler-copy {
+	flex: none;
+	margin-left: 6px;
+}
+
+.sampler-code-scroller {
+	background: #FFF;
+}
+
+/* `pre`, so the code keeps the shape it has in the file and long lines
+   scroll sideways rather than re-wrapping into something you cannot paste. */
+.sampler-code {
+	margin: 0;
+	padding: 16px 18px 28px;
+	font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: #24292E;
+	white-space: pre;
+}
+
+/* The tokens `highlight.js` emits. */
+.tok-comment	{ color: #6A737D; font-style: italic; }
+.tok-kw			{ color: #D73A49; }
+.tok-string		{ color: #032F62; }
+.tok-number		{ color: #005CC5; }
+.tok-prop		{ color: #6F42C1; }

@@ -21,6 +21,7 @@ through before you see Enyo do something.
 | Pick one | Tap a row. The sample loads beside it. |
 | Find one | Type in the filter. It matches the label, the module name, the library and the blurb — so `drag`, `locale` or `arranger` all find something. |
 | Keyboard | Return takes the first match, Up and Down step through the matches, Escape clears the filter. Two or three letters and a Return is the whole journey. |
+| Read one | **Source** slides a second panel in over the sample, holding the code behind it: the sample's own module, any helper it imports, and its stylesheet. **Copy** puts the file on the clipboard. Press it again and the panel slides back out. |
 | Link to one | The URL carries it: `#onyx/MenuSample`. Back and Forward walk the samples you have looked at. |
 | See it alone | **Open alone** is a real link to the sample's own page, on its own — for the ones that want the whole window, and for devtools. |
 | On a phone | Under 800px the list collapses and the sample takes the screen, with a Samples button to get back. |
@@ -65,6 +66,8 @@ re-run stale code and report a pass for a change that is not there.
 | `Sampler.js` | the shell — a `Panels` under a `CollapsingArranger` |
 | `Sampler.css` | its colour and type; everything structural is layout's and onyx's |
 | `manifests.js` | reads the three libraries' sample lists |
+| `Source.js` | the source panel -- the second card in the detail side |
+| `highlight.js` | an eighty-line syntax highlighter, so the page has no dependency that is not enyo, layout or onyx |
 
 **No samples.** They live in the library they demonstrate, which is where
 upstream had them and where they belong: a sample is documentation for its
@@ -106,6 +109,34 @@ classes that `destroy()` does not clean up. Replacing a frame's document
 disposes of all of it, and one sample throwing takes down its frame and
 nothing else. `Sampler.js` says more, including why the frame is navigated
 with `location.replace()` rather than by assigning `src`.
+
+## Reading a sample's source
+
+**Source** slides a card in over the running sample. What it shows is worked
+out from the sample's path rather than listed anywhere, so there is nothing to
+maintain per sample and nothing that can fall out of date:
+
+| | |
+| --- | --- |
+| `<lib>/samples/<Name>.js` | the sample itself -- always |
+| `./<helper>.js` | every relative import it makes, so `ListBasicSample` offers `NameGenerator.js` and the Flickr samples offer `FlickrFallback.js` |
+| `<lib>/samples/<Name>.css` | its stylesheet, when it has one |
+
+That is 78 samples, 8 of them with a helper module and 46 with a stylesheet,
+with no per-sample wiring. It deliberately stops there: the shell's own Panels,
+Scroller and arrangers are the sampler's furniture, not the thing being
+sampled, and showing them would bury the ten lines anyone came to copy.
+
+The slide is a second `Panels` nested inside the first, under a
+`CarouselArranger` -- the arranger lays its panels out in a row and moves along
+it, so the source comes in from the right and goes back out the way it came.
+
+`Copy` tries `document.execCommand('copy')` before the Clipboard API, which
+looks backwards. It is not: the deprecated call is gated only on a live user
+gesture, while `clipboard-write` is a permission a browser may simply refuse,
+and it has to run inside the tap because a promise callback is already too
+late to count as a gesture. If both are refused the text is selected instead
+and the button says so.
 
 ## Why the forks exist
 
