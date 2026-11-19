@@ -12,7 +12,7 @@ which are what made the original so brittle.
 
 ## What it does
 
-A list of all 78 samples on the left, the selected one **running** on the
+A list of all 79 samples on the left, the selected one **running** on the
 right. It opens with a sample already going, so there is nothing to click
 through before you see Enyo do something.
 
@@ -80,10 +80,13 @@ out — and each section header here links to it.
 | --- | ---: | --- |
 | [enyo](https://github.com/drahgon55/enyo) | 33 | `enyo/samples/index.html` |
 | [layout](https://github.com/drahgon55/layout) | 23 | `layout/samples/index.html` |
-| [onyx](https://github.com/drahgon55/onyx) | 22 | `onyx/samples/index.html` |
+| [onyx](https://github.com/drahgon55/onyx) | 23 | `onyx/samples/index.html` |
 
-78 in all, ported from the `2.5.1-release` tag of each upstream repository —
-the last tag that still had them, before 2.6 deleted every `samples/` folder.
+79 in all. Seventy-eight are ported from the `2.5.1-release` tag of each
+upstream repository — the last tag that still had them, before 2.6 deleted
+every `samples/` folder. The seventy-ninth, onyx's `Section List`, is not a
+port: it demonstrates `onyx/SectionList`, a kind that fork added and upstream
+never had.
 Those counts are read from each library's `samples/samples.js` at load time
 rather than written down here, so the page cannot be wrong about them; this
 table can, and is the only copy that has to be maintained by hand.
@@ -126,7 +129,7 @@ maintain per sample and nothing that can fall out of date:
 | `./<helper>.js` | every relative import it makes, so `ListBasicSample` offers `NameGenerator.js` and the Flickr samples offer `FlickrFallback.js` |
 | `<lib>/samples/<Name>.css` | its stylesheet, when it has one |
 
-That is 78 samples, 8 of them with a helper module and 46 with a stylesheet,
+That is 79 samples, 8 of them with a helper module and 46 with a stylesheet,
 with no per-sample wiring. It deliberately stops there: the shell's own Panels,
 Scroller and arrangers are the sampler's furniture, not the thing being
 sampled, and showing them would bury the ten lines anyone came to copy.
