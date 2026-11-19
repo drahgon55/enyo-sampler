@@ -96,8 +96,9 @@ links sideways out of itself, to sibling checkouts, by relative path.
 **It is built out of the three libraries it demonstrates**, which is the
 point: a `Panels` under a `CollapsingArranger`, with `FittableRows`, an
 `enyo/Scroller`, and onyx's toolbars, inputs, and a `Groupbox` of `Item`s per
-library — so the rows are framed, ruled and rounded by onyx's own stylesheet
-rather than by anything here. The responsive
+library — flattened to full width, so the groupbox is what groups a library's
+rows for the fold and rules a line between them, rather than what draws a card
+around them. The responsive
 behaviour is not hand-written CSS — it is `PanelsFlickrSample` doing
 master/detail, pointed at samples instead of photographs. So the sampler is
 itself the seventy-ninth sample, and if the layout breaks, something in layout

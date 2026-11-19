@@ -90,19 +90,33 @@ body, body.enyo-body-fit {
 }
 
 .sampler-scroller {
-	/* Not white: the sections are onyx groupboxes, which are white cards with
-	   a 1px frame, and a card needs something to be a card against. */
-	background: #EDEDED;
+	background: #FFF;
 	/* Keep a flick that overruns the end of the list from chaining out to the
 	   document and taking the shell with it. */
 	overscroll-behavior: contain;
 }
 
-/* One `onyx/Groupbox` per library. Everything that makes the rows look like
-   rows -- the 1px frame, the rule between them, the rounded first and last --
-   is onyx's `.onyx-groupbox > *`, so all this says is where the card sits. */
+/* One `onyx/Groupbox` per library -- but flattened out, so the list reads as
+   one list rather than three cards stacked in a column. The groupbox stays
+   because it is what groups the rows for the fold and what rules a line
+   between them; what goes is the framing that made it a box.
+
+   Full bleed means no side borders and no rounded ends. onyx names its first
+   and last children explicitly -- that is where the rounding and the top
+   border come from -- so this has to name them too, or those two keep a frame
+   nothing else has. */
 .sampler-section-box {
-	margin: 8px;
+	margin: 0;
+}
+
+.sampler-section-box > *,
+.sampler-section-box > *:first-child,
+.sampler-section-box > *:last-child {
+	border-width: 0 0 1px;
+	border-radius: 0;
+	/* onyx's #aaa is a frame colour, which is too strong for a rule repeated
+	   down 78 rows at full width. */
+	border-color: #DCDCDC;
 }
 
 /* The header of one. The dark fill, the gradient over it and the bold white
@@ -175,13 +189,6 @@ body, body.enyo-body-fit {
 	text-decoration: underline;
 }
 
-/* Shut, the header is the whole card, so it takes both pairs of corners.
-   onyx's own rule for a groupbox's first child gives it the top pair only,
-   and it cannot know the rest of the box is hidden. */
-.sampler-collapsed > .sampler-section {
-	border-radius: 4px;
-}
-
 /* Padding and type are onyx's (`.onyx-item`, `.onyx-groupbox > *`). */
 .sampler-item {
 	cursor: pointer;
@@ -194,12 +201,6 @@ body, body.enyo-body-fit {
    white and only the blue edge was left of it. */
 .sampler-item:not(.enyo-selected) {
 	background: #FFF;
-}
-
-/* The last row the filter left showing. onyx rounds the last child, which is
-   structural and so stays on a hidden row; `refreshSection` moves this one. */
-.sampler-item-last {
-	border-radius: 0 0 4px 4px;
 }
 
 /* `:not()` so a hover cannot grey out the selected row: onyx colours

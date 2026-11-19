@@ -512,26 +512,15 @@ export default kind({
 	*/
 	refreshSection: function (section) {
 		section.caret.setContent(section.collapsed ? CARET_SHUT : CARET_OPEN);
-		// onyx rounds a groupbox's bottom corners with `:last-child`, which is
-		// structural: a hidden row is still the last child, so the rounding
-		// stays on a `display: none` row and whatever you can see ends square.
-		// CSS cannot ask for the last *visible* child, so this says which it
-		// is -- and when a shut section is nothing but its header, the header
-		// takes both corners instead.
+		// Nothing in the stylesheet reads this: the rows run edge to edge now,
+		// so being shut costs the section no corners. It is here because it is
+		// the one place the state is legible from outside -- from devtools, or
+		// from a console probe -- and the alternative is reading a caret
+		// character back out of the DOM.
 		section.box.addRemoveClass('sampler-collapsed', section.collapsed);
 
-		var last = null;
 		for (var i = 0; i < section.rows.length; i++) {
-			var row = section.rows[i];
-			var show = row.matches && !section.collapsed;
-			row.setShowing(show);
-			row.removeClass('sampler-item-last');
-			if (show) {
-				last = row;
-			}
-		}
-		if (last) {
-			last.addClass('sampler-item-last');
+			section.rows[i].setShowing(section.rows[i].matches && !section.collapsed);
 		}
 	},
 
