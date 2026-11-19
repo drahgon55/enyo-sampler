@@ -9,10 +9,23 @@ html, body {
 	height: 100%;
 	margin: 0;
 	padding: 0;
+	/* Chrome on macOS bounces the viewport whenever a scroll runs past its end,
+	   and every scroll here does: a flick reaches the bottom of the list, or the
+	   wheel lands on the sample frame, which consumes nothing of its own. The
+	   whole shell visibly shifts and springs back. Nothing on this page is meant
+	   to scroll as a page, so refuse the bounce outright. The Y axis only --
+	   leaving X alone keeps the two-finger swipe-back gesture. */
+	overscroll-behavior-y: none;
 }
 
-body {
-	overflow: hidden;			/* the Panels is enyo-fit; nothing should scroll */
+/* This has to name `.enyo-body-fit` to have any effect. enyo adds that class
+   to the body when a control is rendered into it, it carries `overflow: auto`,
+   and a class beats a bare element selector however the sheets are ordered --
+   so `body { overflow: hidden }` on its own silently loses. The Panels is
+   enyo-fit and the page itself should never scroll; `auto` would hand any
+   stray overflow a scrollbar and scroll the entire shell with it. */
+body, body.enyo-body-fit {
+	overflow: hidden;
 	background: #2B2B2B;
 	font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -78,6 +91,9 @@ body {
 
 .sampler-scroller {
 	background: #FFF;
+	/* Keep a flick that overruns the end of the list from chaining out to the
+	   document and taking the shell with it. */
+	overscroll-behavior: contain;
 }
 
 /* A GroupboxHeader used on its own. It brings its own background and its own
